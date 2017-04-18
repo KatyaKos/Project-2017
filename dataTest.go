@@ -11,51 +11,100 @@ import (
 func main() {
 	args := os.Args
 
-	if (len(args) > 2) {
+	if (len(args) > 6) {
 		fmt.Println("Too many arguments")
 		os.Exit(1)
 	} else if (len(args) == 1) {
 		args = []string{args[0], "help"}
 	}
 
-	if (args[1] == "gen" || args[1] == "-generate") {
-		generate()
-	} else if (args[1] == "cl" || args[1] == "-clean") {
-		cleanTestFolder("/test")
+	namenode := "localhost:54310"
+	root := "/test"
+	if (len(args) >= 3) {
+		if (len(args) < 4) {
+			fmt.Printf("Please, provide value for option \"%s\"\n", args[2])
+			os.Exit(1)
+		}
+		if (args[2] == "-nn" || args[2] == "--namenode") {
+			namenode = args[3]
+		} else if (args[2] == "-r" || args[2] == "--root") {
+			root = args[3]
+		} else {
+			fmt.Println("Unknown option")
+			os.Exit(1)
+		}
+	}
+	if (len(args) >= 5) {
+		if (len(args) < 6) {
+			fmt.Printf("Please, provide value for option \"%s\"\n", args[4])
+			os.Exit(1)
+		}
+		if (args[4] == "-nn" || args[4] == "--namenode") {
+			namenode = args[5]
+		} else if (args[4] == "-r" || args[4] == "--root") {
+			root = args[5]
+		} else {
+			fmt.Println("Unknown option")
+			os.Exit(1)
+		}
+	}
+
+
+	if (args[1] == "gen" || args[1] == "generate") {
+		generateTestData(namenode, root)
+	} else if (args[1] == "cl" || args[1] == "clean"){
+		cleanTestData(namenode, root)
 	} else {
-		if (args[1] != "help" && args[1] != "-help") {
+		if (args[1] != "help") {
 			fmt.Println("Unknown command: " + args[1])
 		}
-		fmt.Println("Usage: " + args[0] + " COMMAND\n" +
-			"\nValid commands:\n  gen or -generate     to generate data in test directory of hdfs\n  cl or -clean         to clean test directory")
+		fmt.Printf("Usafe: %s COMMAND option_name option_value\n\nValis commands:\n", args[0])
+		fmt.Println("  generate [gen] --root [-r] --namenode [-nn]     to generate data in root")
+		fmt.Println("  clean [cl] --root [-r] --namenode [-nn]         to clean root from data")
 	}
 }
 
-func generate() {
-	generateFiles()
-	generateDirectories()
-}
+func generateTestData(namenode string, root string) {
+	client, err := hdfs.New(namenode)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.Mkdir(root + "/testme", 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.Mkdir(root + "/testhim", 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-func generateFiles() {
-	client, _ := hdfs.New("localhost:54310")
-	client.CreateEmptyFile("/test/test1.txt")
-	fileWriter, _ := client.Create("/test/test2.txt")
+	err = client.CreateEmptyFile(root + "/testme/test3.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.CreateEmptyFile(root + "/test1.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileWriter, err := client.Create(root + "/test2.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
 	fileWriter.Write([]byte("random"))
 	fileWriter.Close()
 }
 
-func generateDirectories() {
-	client, _ := hdfs.New("localhost:54310")
-	client.Mkdir("/test/testme", 0777)
-	client.Mkdir("/test/testhim", 0777)
+func cleanTestData(namenode string, root string) {
 
-	client.CreateEmptyFile("/test/testme/test3.txt")
-}
-
-func cleanTestFolder(root string) {
-
-	client, _ := hdfs.New("localhost:54310")
-	osPaths, _ := client.ReadDir(root)
+	client, err := hdfs.New(namenode)
+	if err != nil {
+		log.Fatal(err)
+	}
+	osPaths, err := client.ReadDir(root)
+	if err != nil {
+		log.Fatal(err)
+	}
 	paths := make([]string, 0, len(osPaths))
 
 	for _, p := range osPaths {
@@ -86,13 +135,19 @@ func cleanTestFolder(root string) {
 		fmt.Println("Finished cleaning!")
 	} else {
 		for _, p := range files {
-			client.Remove(p)
+			err = client.Remove(p)
+			if err != nil {
+				log.Fatal(err)
+			}
 			fmt.Printf("%s is removed\n", p)
 		}
 
 		for _, dir := range dirs {
-			cleanTestFolder(dir)
-			client.Remove(dir)
+			cleanTestData(namenode, dir)
+			err = client.Remove(dir)
+			if err != nil {
+				log.Fatal(err)
+			}
 			fmt.Printf("%s is removed\n", dir)
 		}
 	}
