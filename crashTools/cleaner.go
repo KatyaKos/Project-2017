@@ -35,20 +35,20 @@ func CleanHdfsFolder(root string, parsedArgs ParsedArguments) {
 		}
 	}
 
-	if len(files) == 0 && len(dirs) == 1 {
+	if len(files) == 0 && len(dirs) == 0 {
 		fmt.Println("Finished cleaning!")
 	} else {
 		for _, p := range files {
 			err = client.Remove(p)
 			PrintErrorToFmtAndExit(err)
-			fmt.Printf("%s is removed\n", p)
+			//fmt.Printf("%s is removed\n", p)
 		}
 
 		for _, dir := range dirs {
 			CleanHdfsFolder(dir, parsedArgs)
 			err = client.Remove(dir)
 			PrintErrorToFmtAndExit(err)
-			fmt.Printf("%s is removed\n", dir)
+			//fmt.Printf("%s is removed\n", dir)
 		}
 	}
 }
