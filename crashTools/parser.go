@@ -10,6 +10,7 @@ type ParsedArguments struct {
 	Cmd      string
 	Namenode string
 	Root     string
+	Type     string
 }
 
 func Parse(arguments []string) ParsedArguments {
@@ -19,9 +20,10 @@ func Parse(arguments []string) ParsedArguments {
 	genCommand := flag.NewFlagSet("gen", flag.ExitOnError)
 
 	cleanRootPtr := cleanCommand.String("root", "/test", "directory you want to clean")
-	cleanNamenodePtr := cleanCommand.String("namenode", "localhost:54310", "namenode with the directory")
+	cleanNamenodePtr := cleanCommand.String("namenode", "master:54310", "namenode with the directory")
 	genRootPtr := genCommand.String("root", "/test", "directory where you want to generate data")
-	genNamenodePtr := genCommand.String("namenode", "localhost:54310", "namenode with the directory")
+	genNamenodePtr := genCommand.String("namenode", "master:54310", "namenode with the directory")
+	genTypePtr := genCommand.String("type", "5", "type of generation")
 
 	if len(arguments) < 2 {
 		PrintHelp(arguments[0])
@@ -46,6 +48,7 @@ func Parse(arguments []string) ParsedArguments {
 		parsedArgs.Cmd = "gen"
 		parsedArgs.Root = *genRootPtr
 		parsedArgs.Namenode = *genNamenodePtr
+		parsedArgs.Type = *genTypePtr
 	}
 
 	return parsedArgs

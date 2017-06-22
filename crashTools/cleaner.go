@@ -21,7 +21,6 @@ func CleanHdfsFolder(root string, parsedArgs ParsedArguments) {
 		return
 	}
 
-	files := make([]string, 0, len(paths))
 	dirs := make([]string, 0, len(paths))
 
 	for _, p := range paths {
@@ -31,19 +30,14 @@ func CleanHdfsFolder(root string, parsedArgs ParsedArguments) {
 		if fi.IsDir() {
 			dirs = append(dirs, p)
 		} else {
-			files = append(files, p)
+			err = client.Remove(p)
+			PrintErrorToFmtAndExit(err)
 		}
 	}
 
-	if len(files) == 0 && len(dirs) == 0 {
+	if len(dirs) == 0 {
 		fmt.Println("Finished cleaning!")
 	} else {
-		for _, p := range files {
-			err = client.Remove(p)
-			PrintErrorToFmtAndExit(err)
-			//fmt.Printf("%s is removed\n", p)
-		}
-
 		for _, dir := range dirs {
 			CleanHdfsFolder(dir, parsedArgs)
 			err = client.Remove(dir)
