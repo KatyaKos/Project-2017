@@ -22,5 +22,8 @@ func String(length int) string {
 }
 
 func Int(lim int) int {
+	if lim <= 0 {
+		return 0
+	}
 	return seededRand.Intn(lim)
 }
